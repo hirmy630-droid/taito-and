@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#000000">
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="タイトフレーム計算">
+
+    <title>タイトフレーム計算 - KYOWA ROOF</title>
+    <script src="https://cdn.tailwindcss.com/3.4.1"></script>
+    <style>
+        :root {
+            --ios-bg: #000000;
+            --ios-card: #1c1c1e;
+            --ios-border: #333333;
+            --ios-orange: #ff9f0a;
+            --ios-blue: #0a84ff;
+            --ios-green: #30d158;
+            --ios-silver: #c7c7cc;
+            --ios-silver-dark: #9a9a9e;
+            --label-gray: #b0b0b5;
+            --unfocused-border: #444446;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-text-size-adjust: 100%;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            background: var(--ios-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ヘッダー */
+        .header-bar {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--ios-border);
+            background: var(--ios-bg);
+        }
+
+        /* スリムなタブ */
+        .tab-wrapper {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(15px);
+            padding: 8px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        .tab-container {
+            display: flex;
+            background: #2c2c2e;
+            width: 92%;
+            max-width: 420px;
+            padding: 2px;
+            border-radius: 10px;
+            border: 1px solid #3a3a3c;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 5px 0;
+            background: transparent;
+            color: var(--ios-silver-dark);
+            font-size: 12px;
+            font-weight: 500;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            border: 1.5px solid transparent;
+        }
+
+        .tab-button.active {
+            background: #636366;
+            color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .main-container {
+            width: 100%;
+            max-width: 420px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        /* 計算結果パネル */
+        .result-stack { padding: 10px 12px; }
+        .result-box {
+            height: 60px;
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border: 1.5px solid var(--ios-border);
+            border-radius: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            margin-bottom: 8px;
+            position: relative;
+        }
+
+        .result-box-blue { background: rgba(10, 132, 255, 0.15); border-color: var(--ios-blue); }
+        .result-box-green { background: rgba(48, 209, 88, 0.15); border-color: var(--ios-green); }
+
+        .result-value {
+            font-size: 37px; 
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: baseline;
+            gap: 1px;
+        }
+
+        .result-label-left {
+            font-size: 15px; 
+            font-weight: 700;
+            line-height: 1.2;
+            text-transform: uppercase;
+            min-width: 60px;
+        }
+
+        .unit-text {
+            font-size: 16px;
+            font-weight: 600;
+            color: #ffffff;
+            opacity: 0.6;
+        }
+
+        .separator-slash {
+            font-size: 18px;
+            font-weight: 600;
+            opacity: 0.2;
+            margin: 0 4px;
+        }
+
+        .yane-area {
+            font-size: 15px;
+            font-weight: 500;
+            opacity: 0.7;
+            display: flex;
+            align-items: baseline;
+        }
+
+        /* セルグリッド */
+        .cell-grid {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            background: var(--ios-border);
+            gap: 1px;
+            margin: 0 12px 0;
+            border-radius: 16px 16px 0 0;
+            overflow: hidden;
+            border: 1px solid var(--ios-border);
+            border-bottom: none;
+        }
+
+        .calc-cell {
+            background: #121214;
+            height: 54px; 
+            padding: 0 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            grid-column: span 3;
+            border: 0.5px solid var(--unfocused-border);
+        }
+
+        .calc-cell-lg { height: 56px; }
+        .span-6 { grid-column: span 6 !important; }
+
+        .calc-cell.focused {
+            background: #1c1c1e;
+            box-shadow: inset 0 0 0 1.5px var(--ios-orange) !important;
+            border-color: var(--ios-orange);
+            z-index: 10;
+        }
+
+        .type-select {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 5;
+        }
+
+        .input-value {
+            font-size: 26px;
+            font-weight: 600;
+            color: #ffffff;
+            flex: 1;
+            text-align: right;
+        }
+
+        .input-label-left {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--label-gray);
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+
+        /* テンキー */
+        .keypad-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--ios-border);
+            margin: 0 12px 12px;
+            border-radius: 0 0 16px 16px;
+            overflow: hidden;
+            border: 1px solid var(--ios-border);
+        }
+
+        .key-btn {
+            background: #1c1c1e;
+            color: white;
+            height: 64px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.1s;
+        }
+        .key-btn:active { background: #333; }
+        .key-btn.orange { background: var(--ios-orange); font-weight: 600; }
+        .key-btn.gray { background: #2c2c2e; color: var(--label-gray); font-size: 18px; font-weight: 600; }
+
+        .key-backspace {
+            font-size: 32px !important;
+            color: #ffffff !important;
+        }
+
+        /* 割付表表示 */
+        .table-area { padding: 10px 12px; }
+        .table-card {
+            background: var(--ios-card);
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--ios-border);
+        }
+        .table-cell {
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--ios-border);
+            font-size: 18px;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        .table-foot-row {
+            background: #2c2c2e;
+            border-top: 2px solid #444;
+        }
+
+        #toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(59, 130, 246, 0.95);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: bold;
+            opacity: 0;
+            z-index: 1000;
+            transition: 0.3s;
+            pointer-events: none;
+        }
+        #toast.show { opacity: 1; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="toast">コピーしました</div>
+
+    <div class="main-container">
+        <div class="header-bar">
+            <span style="font-size: 14px; font-weight: 600;">タイトフレーム計算</span>
+            <span style="font-size: 12px; opacity: 0.8; font-weight: 500;">KYOWA ROOF</span>
+        </div>
+
+        <div class="tab-wrapper">
+            <div class="tab-container">
+                <button id="tab-calc" class="tab-button active" onclick="switchTab('calc')">計算入力</button>
+                <button id="tab-table" class="tab-button" onclick="switchTab('table')">割付表</button>
+            </div>
+        </div>
+
+        <div id="view-calc">
+            <div class="result-stack">
+                <div class="result-box result-box-blue" onclick="copyValue('resTaniZan')">
+                    <div class="result-label-left text-[#0a84ff]">谷芯</div>
+                    <div class="result-value">
+                        <span id="resTaniZan">-</span><span class="unit-text">㎜</span>
+                        <span class="separator-slash">/</span>
+                        <div class="yane-area">
+                            <span>屋根割付 </span><span id="resYaneTani" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-box result-box-green" onclick="copyValue('resYamaZan')">
+                    <div class="result-label-left text-[#30d158]">山芯</div>
+                    <div class="result-value">
+                        <span id="resYamaZan">-</span><span class="unit-text">㎜</span>
+                        <span class="separator-slash">/</span>
+                        <div class="yane-area">
+                            <span>屋根割付 </span><span id="resYaneYama" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="cell-grid">
+                <div class="calc-cell" id="type-cell">
+                    <span class="input-label-left">タイプ</span>
+                    <div id="display-size" class="input-value">600</div>
+                    <select id="sizeSelect" class="type-select" onchange="handleSelectChange(this.value)">
+                        <option value="600">600タイプ</option>
+                        <option value="500">500タイプ</option>
+                        <option value="1000">1000タイプ</option>
+                    </select>
+                    <span class="text-[10px] text-zinc-600 ml-1">▼</span>
+                </div>
+                <div class="calc-cell" style="background: #0a0a0b;">
+                    <span class="input-label-left">全長芯</span>
+                    <div id="display-centerL" class="input-value text-zinc-500">0</div>
+                </div>
+                <div class="calc-cell span-6 calc-cell-lg focused" onclick="focusInput('totalLength')">
+                    <span class="input-label-left">全長 (L)</span>
+                    <div id="display-totalLength" class="input-value">0</div>
+                </div>
+            </div>
+
+            <div class="keypad-container">
+                <button class="key-btn" onclick="pressKey('7')">7</button>
+                <button class="key-btn" onclick="pressKey('8')">8</button>
+                <button class="key-btn" onclick="pressKey('9')">9</button>
+                <button class="key-btn gray key-backspace" onclick="pressKey('backspace')">⇦</button>
+                
+                <button class="key-btn" onclick="pressKey('4')">4</button>
+                <button class="key-btn" onclick="pressKey('5')">5</button>
+                <button class="key-btn" onclick="pressKey('6')">6</button>
+                <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
+                
+                <button class="key-btn" onclick="pressKey('1')">1</button>
+                <button class="key-btn" onclick="pressKey('2')">2</button>
+                <button class="key-btn" onclick="pressKey('3')">3</button>
+                <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">⏎</button>
+                
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn" onclick="pressKey('00')">00</button>
+                <button class="key-btn" onclick="pressKey('000')">000</button>
+            </div>
+        </div>
+
+        <div id="view-table" class="hidden">
+            <div class="table-area">
+                <div class="table-card">
+                    <div class="bg-[#2c2c2e] p-3 flex justify-between items-center border-b border-[#444]">
+                        <span class="font-bold text-base">全長: <span id="table-badge-L">-</span>㎜</span>
+                        <span class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</span>
+                    </div>
+                    <table class="w-full">
+                        <thead class="shadow-md">
+                            <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-semibold border-b border-[#444]">
+                                <th class="py-2 border-r border-[#444] w-1/2 text-[#0a84ff] tracking-wider">谷芯(mm)</th>
+                                <th class="py-2 w-1/2 text-[#30d158] tracking-wider">山芯(mm)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultTableBody"></tbody>
+                        <tfoot class="table-foot-row shadow-inner">
+                            <tr class="font-semibold border-t border-[#444]">
+                                <td class="py-2 border-r border-[#444] text-center text-[#0a84ff]">
+                                    <span class="text-[14px] block opacity-70 mb-0.5 font-bold">本数合計</span>
+                                    <span class="text-[18px]"><span id="foot-totalCount">-</span>本</span>
+                                </td>
+                                <td class="py-2 text-center text-[#30d158]">
+                                    <span class="text-[14px] block opacity-70 mb-0.5 font-bold">タイプ</span>
+                                    <span class="text-[18px]"><span id="foot-size">-</span>㎜</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    let currentActiveTab = 'calc';
+    let focusedInputId = 'totalLength';
+    let isOverwriteMode = true; 
+    const storageKey = 'tight_frame_v13_final';
+
+    const inputs = {
+        totalLength: '',
+        size: '600'
+    };
+
+    function switchTab(tabName) {
+        currentActiveTab = tabName;
+        document.getElementById('view-calc').classList.toggle('hidden', tabName !== 'calc');
+        document.getElementById('view-table').classList.toggle('hidden', tabName !== 'table');
+        document.getElementById('tab-calc').classList.toggle('active', tabName === 'calc');
+        document.getElementById('tab-table').classList.toggle('active', tabName === 'table');
+        
+        if (tabName === 'table') generateTable();
+        window.scrollTo(0, 0);
+    }
+
+    function focusInput(id) {
+        document.querySelectorAll('.calc-cell').forEach(el => el.classList.remove('focused'));
+        const displayEl = document.getElementById(`display-${id}`);
+        if (displayEl) {
+            displayEl.parentElement.classList.add('focused');
+            focusedInputId = id;
+            isOverwriteMode = true;
+        }
+    }
+
+    function handleSelectChange(val) {
+        inputs.size = val;
+        updateDisplay();
+        calculate();
+    }
+
+    function pressKey(key) {
+        if (key === 'backspace') {
+            inputs[focusedInputId] = inputs[focusedInputId].toString().slice(0, -1);
+            isOverwriteMode = false;
+        } else if (key === 'clearAll') {
+            inputs.totalLength = '';
+            inputs.size = '600';
+            document.getElementById('sizeSelect').value = '600';
+            isOverwriteMode = true;
+        } else if (key === 'enter') {
+            handleEnter();
+            return;
+        } else {
+            if (isOverwriteMode) {
+                inputs[focusedInputId] = key;
+                isOverwriteMode = false;
+            } else {
+                if (inputs[focusedInputId] === '0') inputs[focusedInputId] = key;
+                else inputs[focusedInputId] += key;
+            }
+        }
+        updateDisplay();
+        calculate();
+    }
+
+    function handleEnter() {
+        if (focusedInputId === 'totalLength') switchTab('table');
+    }
+
+    function updateDisplay() {
+        const sizeDisplay = document.getElementById('display-size');
+        if (sizeDisplay) {
+            sizeDisplay.innerText = inputs.size;
+            sizeDisplay.style.opacity = '1';
+        }
+
+        const tlDisplay = document.getElementById('display-totalLength');
+        if (tlDisplay) {
+            if (inputs.totalLength === '') {
+                tlDisplay.innerText = '0';
+                tlDisplay.style.opacity = '0.3';
+            } else {
+                tlDisplay.innerText = parseFloat(inputs.totalLength).toLocaleString('ja-JP');
+                tlDisplay.style.opacity = '1';
+            }
+        }
+        saveToStorage();
+    }
+
+    function excelMod(number, divisor) {
+        if (divisor === 0) return 0;
+        return number - divisor * Math.floor(number / divisor);
+    }
+
+    function calculate() {
+        const L = parseFloat(inputs.totalLength);
+        const size = parseFloat(inputs.size);
+
+        const resTaniZan = document.getElementById('resTaniZan');
+        const resYamaZan = document.getElementById('resYamaZan');
+        const resYaneTani = document.getElementById('resYaneTani');
+        const resYaneYama = document.getElementById('resYaneYama');
+        const displayCenterL = document.getElementById('display-centerL');
+
+        if (isNaN(L) || isNaN(size) || size <= 0) {
+            resTaniZan.innerText = "-";
+            resYamaZan.innerText = "-";
+            resYaneTani.innerText = "-";
+            resYaneYama.innerText = "-";
+            displayCenterL.innerText = "0";
+            return;
+        }
+
+        let yama = 0, tani = 0;
+        if (size === 600) { yama = 200; tani = 100; }
+        else if (size === 500) { yama = 250; tani = 125; }
+        else if (size === 1000) { yama = 500; tani = 250; }
+
+        displayCenterL.innerText = Math.round(L / 2).toLocaleString();
+
+        const taniZan = excelMod(L / 2, yama);
+        const yamaZan = excelMod((L / 2) - tani, yama);
+
+        resTaniZan.innerText = Math.floor(taniZan).toLocaleString();
+        resYamaZan.innerText = Math.floor(yamaZan).toLocaleString();
+        
+        resYaneTani.innerText = Math.floor(yamaZan).toLocaleString();
+        resYaneYama.innerText = Math.floor(taniZan).toLocaleString();
+    }
+
+    function generateTable() {
+        const L = parseFloat(inputs.totalLength);
+        const size = parseFloat(inputs.size);
+        const tbody = document.getElementById('resultTableBody');
+        tbody.innerHTML = '';
+
+        document.getElementById('table-badge-L').innerText = isNaN(L) ? '-' : L.toLocaleString();
+        document.getElementById('foot-size').innerText = isNaN(size) ? '-' : size.toLocaleString();
+        
+        const footTotalCount = document.getElementById('foot-totalCount');
+        footTotalCount.innerText = "-";
+
+        if (isNaN(L) || isNaN(size) || size <= 0) return;
+
+        let yama = 0, tani = 0;
+        if (size === 600) { yama = 200; tani = 100; }
+        else if (size === 500) { yama = 250; tani = 125; }
+        else if (size === 1000) { yama = 500; tani = 250; }
+
+        const taniStart = excelMod(L / 2, yama);
+        const yamaStart = excelMod((L / 2) - tani, yama);
+
+        let curTani = taniStart;
+        let curYama = yamaStart;
+        let count = 0;
+
+        while (curTani <= L || curYama <= L) {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="table-cell border-r border-[#333] text-[#0a84ff]">${(curTani <= L && curTani >= 0) ? Math.floor(curTani).toLocaleString() : '-'}</td>
+                <td class="table-cell text-[#30d158]">${(curYama <= L && curYama >= 0) ? Math.floor(curYama).toLocaleString() : '-'}</td>
+            `;
+            tbody.appendChild(tr);
+            curTani += size;
+            curYama += size;
+            count++;
+            if (count > 1000) break;
+        }
+        footTotalCount.innerText = count.toLocaleString();
+    }
+
+    function saveToStorage() {
+        localStorage.setItem(storageKey, JSON.stringify(inputs));
+    }
+
+    function loadFromStorage() {
+        const saved = localStorage.getItem(storageKey);
+        if (saved) {
+            const data = JSON.parse(saved);
+            Object.assign(inputs, data);
+            document.getElementById('sizeSelect').value = inputs.size;
+            updateDisplay();
+            calculate();
+        }
+    }
+
+    function copyValue(id) {
+        const val = document.getElementById(id).innerText;
+        if (val === "-") return;
+        const temp = document.createElement('textarea');
+        temp.value = val.replace(/,/g, '');
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showToast("コピーしました");
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById('toast');
+        t.innerText = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 1000);
+    }
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    document.addEventListener('touchstart', e => {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }, { passive: true });
+
+    document.addEventListener('touchend', e => {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) return;
+        const touchEndX = e.changedTouches[0].clientX;
+        const touchEndY = e.changedTouches[0].clientY;
+        const deltaX = touchStartX - touchEndX;
+        const deltaY = Math.abs(touchStartY - touchEndY);
+        if (Math.abs(deltaX) > 80 && deltaY < 100) {
+            if (deltaX > 0 && currentActiveTab === 'calc') switchTab('table');
+            else if (deltaX < 0 && currentActiveTab === 'table') switchTab('calc');
+        }
+    }, { passive: true });
+
+    window.onload = () => {
+        loadFromStorage();
+        focusInput('totalLength');
+    };
+</script>
+</body>
+</html>
