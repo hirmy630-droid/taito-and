@@ -320,21 +320,6 @@ body{
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
-}
-</script>
-
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#000000">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="タイトフレーム計算">
-<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 
 </head>
 <body>
@@ -671,9 +656,9 @@ if ('serviceWorker' in navigator) {
     window.onload = () => { loadFromStorage(); focusInput('totalLength'); };
 </script>
 
-<button id="installBtn" style="position:fixed;right:16px;bottom:20px;z-index:9999;background:#2563eb;color:#fff;border:none;border-radius:14px;padding:12px 16px;font-weight:700;box-shadow:0 10px 24px rgba(0,0,0,.45);display:none;">アプリをインストール</button>
+<button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
 <div id="iosInstallTip" style="position:fixed;left:16px;right:16px;bottom:20px;z-index:9999;background:rgba(28,28,30,.96);color:#fff;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:14px 16px;display:none;line-height:1.45;">
-  <div>iPhone / iPad はSafariの共有から「ホーム画面に追加」を使ってください。</div>
+  <div>iPhone / iPad は Safari の共有から「ホーム画面に追加」を使ってください。</div>
   <button type="button" id="closeIosTip" style="margin-top:10px;background:#2c2c2e;color:#fff;border:none;padding:8px 12px;border-radius:10px;">閉じる</button>
 </div>
 <script>
@@ -685,62 +670,49 @@ if ('serviceWorker' in navigator) {
   const isIOS = /iPhone|iPad|iPod/i.test(window.navigator.userAgent || '');
   let deferredPrompt = null;
 
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js');
+    }, { once: true });
+  }
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
     if (!isStandalone && installBtn) installBtn.style.display = 'block';
+  });
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if (installBtn) installBtn.style.display = 'none';
+    if (iosTip) iosTip.style.display = 'none';
   });
 
   if (installBtn) {
     installBtn.addEventListener('click', async () => {
       if (deferredPrompt) {
         deferredPrompt.prompt();
-        try { await deferredPrompt.userChoice; } catch(e) {}
-        deferredPrompt = null;
-        installBtn.style.display = 'none';
+        try {
+          await deferredPrompt.userChoice;
+        } catch (error) {}
         return;
       }
-      if (isIOS && !isStandalone && iosTip) iosTip.style.display = 'block';
-    });
-  }
-  if (closeIosTip) closeIosTip.addEventListener('click', () => iosTip.style.display = 'none');
-  if (isIOS && !isStandalone && installBtn) installBtn.style.display = 'block';
-})();
-</script>
 
-
-<button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
-<script>
-(function() {
-  let deferredPrompt = null;
-  const btn = document.getElementById('installBtn');
-  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('./sw.js');
+      if (isIOS && !isStandalone && iosTip) {
+        iosTip.style.display = 'block';
+      }
     });
   }
 
-  window.addEventListener('beforeinstallprompt', function(e) {
-    e.preventDefault();
-    deferredPrompt = e;
-    if (!isStandalone) btn.style.display = 'block';
-  });
+  if (closeIosTip) {
+    closeIosTip.addEventListener('click', () => {
+      iosTip.style.display = 'none';
+    });
+  }
 
-  btn.addEventListener('click', async function() {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    try {
-      await deferredPrompt.userChoice;
-    } catch (e) {}
-    deferredPrompt = null;
-    btn.style.display = 'none';
-  });
-
-  window.addEventListener('appinstalled', function() {
-    btn.style.display = 'none';
-  });
+  if (isIOS && !isStandalone && installBtn) {
+    installBtn.style.display = 'block';
+  }
 })();
 </script>
 
