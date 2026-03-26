@@ -326,6 +326,136 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="タイトフレーム計算">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+
+</head>
+<body>
+
+    <div id="toast">コピーしました</div>
+
+    <div class="main-container">
+        <!-- ヘッダー -->
+        <div class="header-bar">
+            <span style="font-size: 14px; font-weight: 600;">タイトフレーム計算</span>
+            <span style="font-size: 12px; opacity: 0.8; font-weight: 500;">KYOWA ROOF</span>
+        </div>
+
+        <!-- タブメニュー -->
+        <div class="tab-wrapper">
+            <div class="tab-container">
+                <button id="tab-calc" class="tab-button active" onclick="switchTab('calc')">計算入力</button>
+                <button id="tab-table" class="tab-button" onclick="switchTab('table')">割付表</button>
+            </div>
+        </div>
+
+        <!-- 計算入力画面 -->
+        <div id="view-calc">
+            <!-- 結果パネル -->
+            <div class="result-stack">
+                <div class="result-box result-box-blue" onclick="copyValue('resTaniZan')">
+                    <div class="result-label-left text-[#0a84ff]">谷芯</div>
+                    <div class="result-value">
+                        <span id="resTaniZan">-</span><span class="unit-text">㎜</span>
+                        <span class="separator-slash">/</span>
+                        <div class="yane-area">
+                            <span>屋根割付 </span><span id="resYaneTani" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="result-box result-box-green" onclick="copyValue('resYamaZan')">
+                    <div class="result-label-left text-[#30d158]">山芯</div>
+                    <div class="result-value">
+                        <span id="resYamaZan">-</span><span class="unit-text">㎜</span>
+                        <span class="separator-slash">/</span>
+                        <div class="yane-area">
+                            <span>屋根割付 </span><span id="resYaneYama" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 入力パネル -->
+            <div class="cell-grid">
+                <div class="calc-cell" id="type-cell">
+                    <span class="input-label-left">タイプ</span>
+                    <div id="display-size" class="input-value">600</div>
+                    <select id="sizeSelect" class="type-select" onchange="handleSelectChange(this.value)">
+                        <option value="600">600タイプ</option>
+                        <option value="500">500タイプ</option>
+                        <option value="1000">1000タイプ</option>
+                    </select>
+                    <span class="text-[10px] text-zinc-600 ml-1">▼</span>
+                </div>
+                <div class="calc-cell" style="background: #0a0a0b;">
+                    <span class="input-label-left">全長芯</span>
+                    <div id="display-centerL" class="input-value text-zinc-500">0</div>
+                </div>
+                <div class="calc-cell span-6 calc-cell-lg focused" onclick="focusInput('totalLength')">
+                    <span class="input-label-left">全長 (L)</span>
+                    <div id="display-totalLength" class="input-value">0</div>
+                </div>
+            </div>
+
+            <div class="keypad-container">
+                <button class="key-btn" onclick="pressKey('7')">7</button>
+                <button class="key-btn" onclick="pressKey('8')">8</button>
+                <button class="key-btn" onclick="pressKey('9')">9</button>
+                <button class="key-btn gray key-backspace" onclick="pressKey('backspace')">⇦</button>
+                <button class="key-btn" onclick="pressKey('4')">4</button>
+                <button class="key-btn" onclick="pressKey('5')">5</button>
+                <button class="key-btn" onclick="pressKey('6')">6</button>
+                <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
+                <button class="key-btn" onclick="pressKey('1')">1</button>
+                <button class="key-btn" onclick="pressKey('2')">2</button>
+                <button class="key-btn" onclick="pressKey('3')">3</button>
+                <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')">⏎</button>
+                <button class="key-btn" onclick="pressKey('0')">0</button>
+                <button class="key-btn" onclick="pressKey('00')">00</button>
+                <button class="key-btn" onclick="pressKey('000')">000</button>
+            </div>
+        </div>
+
+        <div id="view-table" class="hidden">
+            <div class="table-area">
+                <div class="table-card">
+                    <div class="bg-[#2c2c2e] p-3 flex justify-between items-center border-b border-[#444]">
+                        <span class="font-bold text-base">全長: <span id="table-badge-L">-</span>㎜</span>
+                        <span class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</span>
+                    </div>
+                    <table class="w-full">
+                        <thead class="shadow-md">
+                            <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-semibold border-b border-[#444]">
+                                <th class="py-2 border-r border-[#444] w-1/2 text-[#0a84ff] tracking-wider">谷芯(mm)</th>
+                                <th class="py-2 w-1/2 text-[#30d158] tracking-wider">山芯(mm)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultTableBody"></tbody>
+                        <tfoot class="table-foot-row shadow-inner">
+                            <tr class="font-semibold border-t border-[#444]">
+                                <td class="py-2 border-r border-[#444] text-center text-[#0a84ff]">
+                                    <span class="text-[14px] block opacity-70 mb-0.5 font-bold">本数合計</span>
+                                    <span class="text-[18px]"><span id="foot-totalCount">-</span>本</span>
+                                </td>
+                                <td class="py-2 text-center text-[#30d158]">
+                                    <span class="text-[14px] block opacity-70 mb-0.5 font-bold">タイプ</span>
+                                    <span class="text-[18px]"><span id="foot-size">-</span>㎜</span>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
 <script>
     let currentActiveTab = 'calc';
     let focusedInputId = 'totalLength';
@@ -578,6 +708,41 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+
+<button id="installBtn" aria-label="このアプリをインストール">アプリをインストール</button>
+<script>
+(function() {
+  let deferredPrompt = null;
+  const btn = document.getElementById('installBtn');
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js');
+    });
+  }
+
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (!isStandalone) btn.style.display = 'block';
+  });
+
+  btn.addEventListener('click', async function() {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try {
+      await deferredPrompt.userChoice;
+    } catch (e) {}
+    deferredPrompt = null;
+    btn.style.display = 'none';
+  });
+
+  window.addEventListener('appinstalled', function() {
+    btn.style.display = 'none';
+  });
+})();
+</script>
 
 </body>
 </html>
