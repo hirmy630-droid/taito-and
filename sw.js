@@ -1,9 +1,10 @@
-const CACHE_VERSION = 'tightframe-v20260326-1';
+const CACHE_VERSION = 'tightframe-v20260328-1';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 
 const STATIC_ASSETS = [
   './',
+  './index.html',
   './manifest.json',
   './icon-180.png',
   './icon-192.png',
@@ -46,7 +47,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(RUNTIME_CACHE).then((cache) => cache.put('./index.html', responseClone));
           return response;
         })
-        .catch(() => caches.match('./index.html'))
+        .catch(() => caches.match('./index.html') || caches.match('./'))
     );
     return;
   }
