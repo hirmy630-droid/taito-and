@@ -1,5 +1,5 @@
 {
-  "name": "タイトフレーム割付",
+  "name": "タイトフレーム計算",
   "short_name": "タイト",
   "start_url": "./index.html",
   "scope": "./",

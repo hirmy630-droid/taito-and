@@ -182,7 +182,7 @@
 
         .keypad-container {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(3, 1fr);
             gap: 1px;
             background: var(--ios-border);
             margin: 0 12px 12px;
@@ -204,7 +204,7 @@
         }
         .key-btn:active { background: #333; }
         .key-btn.orange { background: var(--ios-orange); font-weight: 600; }
-        .key-btn.gray { background: #2c2c2e; color: var(--label-gray); font-size: 18px; font-weight: 600; }
+        .key-btn.gray { background: #b8b8bd; color: #ffffff; font-size: 18px; font-weight: 600; }
 
         .table-area { padding: 10px 12px; }
         .table-card { background: var(--ios-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--ios-border); }
@@ -338,18 +338,15 @@
                 <button class="key-btn" onclick="pressKey('7')">7</button>
                 <button class="key-btn" onclick="pressKey('8')">8</button>
                 <button class="key-btn" onclick="pressKey('9')">9</button>
-                <button class="key-btn gray">タイプ<select class="type-select" onchange="handleSelectChange(this.value)"><option value="600">600</option><option value="500">500</option><option value="1000">1000</option></select></button>
                 <button class="key-btn" onclick="pressKey('4')">4</button>
                 <button class="key-btn" onclick="pressKey('5')">5</button>
                 <button class="key-btn" onclick="pressKey('6')">6</button>
-                <button class="key-btn gray" onclick="pressKey('clearAll')">AC</button>
                 <button class="key-btn" onclick="pressKey('1')">1</button>
                 <button class="key-btn" onclick="pressKey('2')">2</button>
                 <button class="key-btn" onclick="pressKey('3')">3</button>
-                <button class="key-btn orange row-span-2 h-full" id="enter-btn-label" onclick="pressKey('enter')" style="font-size: 18px; writing-mode: vertical-rl; text-orientation: upright; letter-spacing: 2px;">割付表</button>
                 <button class="key-btn" onclick="pressKey('0')">0</button>
                 <button class="key-btn" onclick="pressKey('00')">00</button>
-                <button class="key-btn" onclick="pressKey('000')">000</button>
+                <button class="key-btn gray" onclick="pressKey('clearAll')">クリア</button>
             </div>
         </div>
 
