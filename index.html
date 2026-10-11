@@ -259,6 +259,8 @@
             #resTaniZan, #resYamaZan { font-size: 24px; }
         .keraba-divider-top > td { border-top: 2px solid #b8b8bd; }
         .keraba-divider-bottom > td { border-bottom: 2px solid #b8b8bd; }
+            .layout-share-button { display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; flex-shrink:0; padding:0; border:1px solid #444446; border-radius:10px; background:#2c2c2e; color:#0a84ff; font-size:15px; font-weight:600; }
+        .layout-share-button:disabled { opacity:0.5; }
     </style>
 
 <link rel="manifest" href="manifest.json">
@@ -368,7 +370,7 @@
         <div id="view-edge" class="hidden">
             <div class="table-area"><div class="table-card">
                 <div class="bg-[#2c2c2e] p-3 border-b border-[#444]">
-                    <div class="font-bold text-base">全長: <span id="edge-L">-</span>㎜</div>
+                    <div class="flex justify-between items-center"><div class="font-bold text-base">全長: <span id="edge-L">-</span>㎜</div><button id="share-edge" type="button" class="layout-share-button" onclick="shareLayout('edge')" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M7 10H5v11h14V10h-2"/></svg></button></div>
                     <div class="font-bold text-base mt-2">タイプ <span id="edge-size">-</span>㎜ / 屋根材 <span id="edge-sheets" class="text-orange-400">-</span>枚</div>
                     <div class="mt-2"><select id="edge-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
                 </div>
@@ -380,11 +382,12 @@
         <!-- 割付表画面 -->
         <div id="view-table" class="hidden">
             <div class="table-area">
+                
                 <div class="table-card">
                     <div class="bg-[#2c2c2e] p-3 border-b border-[#444]">
                         <div class="flex justify-between items-center">
                             <span class="font-bold text-base">全長: <span id="table-badge-L">-</span>㎜</span>
-                            <button id="table-mode" type="button" onclick="toggleTableKeraba()" aria-pressed="false" class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</button>
+                            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button id="table-mode" type="button" onclick="toggleTableKeraba()" aria-pressed="false" class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</button><button id="share-table" type="button" class="layout-share-button" onclick="shareLayout('table')" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M7 10H5v11h14V10h-2"/></svg></button></div>
                         </div>
                         <div class="font-bold text-base mt-2">タイプ <span id="table-badge-size">-</span>㎜ / 屋根材 <span id="table-badge-Sheets" class="text-orange-400">-</span>枚</div>
                         <div id="table-side-wrap" class="mt-2 hidden"><select id="table-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
@@ -648,6 +651,80 @@ function kerabaModel(r,kind){
         document.getElementById('edge-total-with').innerHTML = summary(k, true);
         document.getElementById('edge-note').innerText = (r.error || k.error) || '左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。屋根材の最初の山芯は30mm。本数・端数合計は通常タイトのみ。';
         fillLayoutTable('edge-table', r, k, false, true);
+    }
+
+    function layoutShareText(kind) {
+        if (kind !== 'table' && kind !== 'edge') throw new Error('共有対象を確認してください。');
+        const edge = kind === 'edge';
+        const read = id => document.getElementById(id).innerText.trim();
+        const length = read(edge ? 'edge-L' : 'table-badge-L');
+        if (!length || length === '-') return '';
+        const lines = [edge ? 'タイトフレーム｜片張り' : 'タイトフレーム｜割付表',
+            `全長：${length}mm`,
+            `タイプ：${read(edge ? 'edge-size' : 'table-badge-size')}`,
+            `屋根材：${read(edge ? 'edge-sheets' : 'table-badge-Sheets')}枚`];
+        if (edge || tableKeraba) lines.push(`ケラバ：${kerabaSide === 'both' ? '左右各1本' : '左端1本'}`);
+        else lines.push('ケラバ：なし');
+        if (!edge && read('table-badge-Sheets').includes('/')) lines.push('屋根材枚数の順：谷芯割／山芯割');
+        lines.push('単位：mm（左端からの寸法）', '', edge ? '本｜ケラバなし｜ケラバあり' : '本｜谷芯割｜山芯割');
+        const body = document.getElementById(edge ? 'edge-table' : 'resultTableBody');
+        const clean = el => el.innerText.trim().replace(/\s+/g, ' ');
+        for (const row of body.children) lines.push(Array.from(row.children, clean).join('｜'));
+        lines.push('');
+        if (edge) {
+            lines.push('ケラバなし：' + clean(document.getElementById('edge-total-none')));
+            lines.push('ケラバあり：' + clean(document.getElementById('edge-total-with')));
+        } else {
+            for (const [key, label] of [['tani', '谷芯割'], ['yama', '山芯割']]) {
+                lines.push(`${label}：通常タイト ${read('foot-count-' + key)}本／端数合計 ${read('foot-rem-' + key)}mm`);
+                if (tableKeraba) lines.push(label + '：' + read('foot-keraba-' + key));
+            }
+        }
+        lines.push('本数合計・端数合計は通常タイトのみ。ケラバは別。');
+        return lines.join('\n');
+    }
+
+    async function copyLayoutShareText(text) {
+        if (navigator.clipboard && window.isSecureContext) {
+            try { await navigator.clipboard.writeText(text); return true; } catch (_) {}
+        }
+        const field = document.createElement('textarea');
+        field.value = text;
+        field.readOnly = true;
+        field.style.cssText = 'position:fixed;left:-9999px;top:0;font-size:16px';
+        document.body.appendChild(field);
+        try { field.select(); return document.execCommand('copy'); }
+        catch (_) { return false; }
+        finally { field.remove(); }
+    }
+
+    let layoutShareBusy = false;
+    async function shareLayout(kind) {
+        if (layoutShareBusy) return;
+        layoutShareBusy = true;
+        const buttons = ['share-table', 'share-edge'].map(id => document.getElementById(id));
+        buttons.forEach(button => { if (button) button.disabled = true; });
+        try {
+            if (kind === 'edge') generateEdge();
+            else if (kind === 'table') generateTable();
+            const text = layoutShareText(kind);
+            if (!text) { showToast('全長を入力してから共有してください'); return; }
+            if (typeof navigator.share === 'function' && window.isSecureContext) {
+                try {
+                    await navigator.share({ title: kind === 'edge' ? 'タイトフレーム 片張り' : 'タイトフレーム 割付表', text });
+                    return;
+                } catch (error) {
+                    if (error && error.name === 'AbortError') return;
+                }
+            }
+            const copied = await copyLayoutShareText(text);
+            showToast(copied ? '割付をコピーしました' : '共有できませんでした。画面の画像を送ってください');
+        } catch (_) {
+            showToast('共有できませんでした。画面の画像を送ってください');
+        } finally {
+            layoutShareBusy = false;
+            buttons.forEach(button => { if (button) button.disabled = false; });
+        }
     }
 
     function saveToStorage() { try { localStorage.setItem(storageKey, JSON.stringify(inputs)); } catch (_) {} }
