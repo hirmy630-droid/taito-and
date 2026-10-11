@@ -182,8 +182,8 @@
 
         .keypad-container {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
             background: var(--ios-border);
             margin: 0 12px 12px;
             border-radius: 0 0 16px 16px;
@@ -199,12 +199,18 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background 0.1s;
+            margin: 0;
+            border: 0;
+            border-radius: 0;
+            touch-action: manipulation;
+            background-image: linear-gradient(to bottom, rgba(255,255,255,0.07), rgba(0,0,0,0.10));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.13), inset 1px 0 0 rgba(255,255,255,0.06), inset 0 -2px 2px rgba(0,0,0,0.35), inset -1px 0 0 rgba(0,0,0,0.22);
+            transition: background-color 0.1s, box-shadow 0.1s;
             position: relative;
         }
-        .key-btn:active { background: #333; }
-        .key-btn.orange { background: var(--ios-orange); font-weight: 600; }
-        .key-btn.gray { background: #b8b8bd; color: #ffffff; font-size: 18px; font-weight: 600; }
+        .key-btn:active { background-color: #333; box-shadow: inset 0 2px 4px rgba(0,0,0,0.45), inset 0 -1px 0 rgba(255,255,255,0.06); }
+        .key-btn.orange { background-color: var(--ios-orange); font-weight: 600; }
+        .key-btn.gray { background-color: #2c2c2e; color: var(--label-gray); font-size: 18px; font-weight: 600; }
 
         .table-area { padding: 10px 12px; }
         .table-card { background: var(--ios-card); border-radius: 16px; overflow: hidden; border: 1px solid var(--ios-border); }
@@ -279,6 +285,7 @@
             <div class="tab-container">
                 <button id="tab-calc" class="tab-button active" onclick="switchTab('calc')">数値入力</button>
                 <button id="tab-table" class="tab-button" onclick="switchTab('table')">割付表</button>
+                <button id="tab-edge" class="tab-button" onclick="switchTab('edge')">片張り</button>
             </div>
         </div>
 
@@ -326,7 +333,7 @@
                 </div>
                 <div class="calc-cell" style="background: #0a0a0b;">
                     <span class="input-label-left">全長芯</span>
-                    <div id="display-centerL" class="input-value text-zinc-500">0</div>
+                    <div id="display-centerL" class="input-value" style="color:#ff9f0a">0</div>
                 </div>
                 <div class="calc-cell span-6 calc-cell-lg focused" onclick="focusInput('totalLength')">
                     <span class="input-label-left">全長 (L)</span>
@@ -338,31 +345,51 @@
                 <button class="key-btn" onclick="pressKey('7')">7</button>
                 <button class="key-btn" onclick="pressKey('8')">8</button>
                 <button class="key-btn" onclick="pressKey('9')">9</button>
+                <button id="key-keraba" class="key-btn gray" onclick="toggleTableKeraba()" aria-pressed="false" style="font-size:14px;white-space:nowrap"><span id="key-keraba-state">ケラバOFF</span></button>
                 <button class="key-btn" onclick="pressKey('4')">4</button>
                 <button class="key-btn" onclick="pressKey('5')">5</button>
                 <button class="key-btn" onclick="pressKey('6')">6</button>
+                <button class="key-btn gray" onclick="pressKey('clear')">C</button>
                 <button class="key-btn" onclick="pressKey('1')">1</button>
                 <button class="key-btn" onclick="pressKey('2')">2</button>
                 <button class="key-btn" onclick="pressKey('3')">3</button>
+                <button class="key-btn orange" id="enter-btn-label" onclick="switchTab('table')" style="font-size:18px">割付表</button>
                 <button class="key-btn" onclick="pressKey('0')">0</button>
                 <button class="key-btn" onclick="pressKey('00')">00</button>
-                <button class="key-btn gray" onclick="pressKey('clearAll')">クリア</button>
+                <button class="key-btn" onclick="pressKey('000')">000</button>
+                <button class="key-btn orange" onclick="switchTab('edge')" style="font-size:18px">片張り</button>
             </div>
+        </div>
+
+
+        <div id="view-edge" class="hidden">
+            <div class="table-area"><div class="table-card">
+                <div class="bg-[#2c2c2e] p-3 border-b border-[#444]">
+                    <div class="font-bold text-base">全長: <span id="edge-L">-</span>㎜</div>
+                    <div class="font-bold text-base mt-2">タイプ <span id="edge-size">-</span>㎜ / 屋根材 <span id="edge-sheets" class="text-orange-400">-</span>枚</div>
+                    <div class="mt-2"><select id="edge-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
+                </div>
+                <table class="w-full"><thead><tr class="bg-[#2c2c2e] text-[14px] font-semibold border-b border-[#444]"><th class="py-2 border-r border-[#444] w-12 text-zinc-500">本</th><th class="py-2 border-r border-[#444] text-[#0a84ff]">ケラバなし</th><th class="py-2 text-[#30d158]">ケラバあり</th></tr></thead><tbody id="edge-table"></tbody>
+                <tfoot class="table-foot-row"><tr><td class="border-r border-[#444]"></td><td id="edge-total-none" class="py-3 px-1 text-center border-r border-[#444]"></td><td id="edge-total-with" class="py-3 px-1 text-center"></td></tr></tfoot></table>
+            </div><p id="edge-note" class="text-[14px] text-zinc-400 mt-2">左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。屋根材の最初の山芯は30mm。</p></div>
         </div>
 
         <!-- 割付表画面 -->
         <div id="view-table" class="hidden">
             <div class="table-area">
                 <div class="table-card">
-                    <div class="bg-[#2c2c2e] p-3 flex justify-between items-center border-b border-[#444]">
-                        <!-- 全長/屋根材枚数表示 -->
-                        <span class="font-bold text-base">全長: <span id="table-badge-L">-</span>㎜ / 屋根材 <span id="table-badge-Sheets" class="text-orange-400">-</span>枚</span>
-                        <span class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</span>
+                    <div class="bg-[#2c2c2e] p-3 border-b border-[#444]">
+                        <div class="flex justify-between items-center">
+                            <span class="font-bold text-base">全長: <span id="table-badge-L">-</span>㎜</span>
+                            <button id="table-mode" type="button" onclick="toggleTableKeraba()" aria-pressed="false" class="text-sm bg-[#ff9f0a] px-2 py-0.5 rounded font-bold text-black shadow-sm">割付表</button>
+                        </div>
+                        <div class="font-bold text-base mt-2">タイプ <span id="table-badge-size">-</span>㎜ / 屋根材 <span id="table-badge-Sheets" class="text-orange-400">-</span>枚</div>
+                        <div id="table-side-wrap" class="mt-2 hidden"><select id="table-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
                     </div>
                     <table class="w-full">
                         <thead class="shadow-md">
                             <tr class="bg-[#2c2c2e] text-[14px] text-zinc-400 font-semibold border-b border-[#444]">
-                                <th class="py-2 border-r border-[#444] w-12 text-zinc-500">No.</th>
+                                <th class="py-2 border-r border-[#444] w-12 text-zinc-500">本</th>
                                 <th class="py-2 border-r border-[#444] text-[#0a84ff] tracking-wider">谷芯(mm)</th>
                                 <th class="py-2 text-[#30d158] tracking-wider">山芯(mm)</th>
                             </tr>
@@ -370,26 +397,20 @@
                         <tbody id="resultTableBody"></tbody>
                         <tfoot class="table-foot-row shadow-inner">
                             <tr class="font-semibold border-t border-[#444]">
-                                <td colspan="3" class="p-0">
-                                    <div class="flex divide-x divide-[#444] text-center">
-                                        <div class="flex-1 py-3">
-                                            <span class="text-[11px] block text-zinc-400 mb-0.5 font-bold uppercase">タイプ</span>
-                                            <span class="text-[18px] text-white"><span id="foot-size">-</span><span class="text-[12px] ml-0.5 opacity-60">㎜</span></span>
-                                        </div>
-                                        <div class="flex-1 py-3">
-                                            <span class="text-[11px] block text-zinc-400 mb-0.5 font-bold uppercase">本数合計</span>
-                                            <span class="text-[18px] text-white"><span id="foot-totalCount">-</span><span class="text-[12px] ml-0.5 opacity-60">本</span></span>
-                                        </div>
-                                        <div class="flex-1 py-3">
-                                            <span class="text-[11px] block text-zinc-400 mb-0.5 font-bold uppercase">端数合計</span>
-                                            <span class="text-[18px] text-orange-400"><span id="foot-rem-common">-</span><span class="text-[12px] ml-0.5 opacity-60">㎜</span></span>
-                                        </div>
-                                    </div>
+                                <td class="border-r border-[#444]"></td>
+                                <td class="py-3 px-1 text-center border-r border-[#444]">
+                                    <div><span class="text-[11px] text-zinc-400">本数合計</span> <span class="text-[18px] text-white" id="foot-count-tani">-</span><span class="text-[12px] text-zinc-400">本</span></div><div id="foot-keraba-tani" class="hidden text-[12px] text-zinc-400"></div>
+                                    <div class="mt-1"><span class="text-[11px] text-zinc-400">端数合計</span> <span class="text-[18px] text-orange-400" id="foot-rem-tani">-</span><span class="text-[12px] text-zinc-400">㎜</span></div>
+                                </td>
+                                <td class="py-3 px-1 text-center">
+                                    <div><span class="text-[11px] text-zinc-400">本数合計</span> <span class="text-[18px] text-white" id="foot-count-yama">-</span><span class="text-[12px] text-zinc-400">本</span></div><div id="foot-keraba-yama" class="hidden text-[12px] text-zinc-400"></div>
+                                    <div class="mt-1"><span class="text-[11px] text-zinc-400">端数合計</span> <span class="text-[18px] text-orange-400" id="foot-rem-yama">-</span><span class="text-[12px] text-zinc-400">㎜</span></div>
                                 </td>
                             </tr>
                         </tfoot>
                     </table>
                 </div>
+                <p id="table-note" class="hidden text-[14px] text-zinc-400 mt-2">左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。本数・端数合計は通常タイトのみ。</p>
             </div>
         </div>
     </div>
@@ -401,6 +422,41 @@
     const storageKey = 'tight_frame_v14_final';
 
     const inputs = { totalLength: '', size: '600' };
+    let kerabaSide = 'both';
+    let tableKeraba = false;
+const CONFIG={600:{pitch:200,roofWidth:600,valleys:3,mountains:3,frameWidth:600},500:{pitch:250,roofWidth:500,valleys:2,mountains:2,frameWidth:500},1000:{pitch:500,roofWidth:500,valleys:1,mountains:2,frameWidth:1000}};
+const fmt=n=>n.toLocaleString('ja-JP',{maximumFractionDigits:3});
+const mod=(n,p)=>((n%p)+p)%p;
+const tolerantCeil=n=>Math.max(0,Math.ceil(n-1e-9));
+const tolerantFloor=n=>Math.floor(n+1e-9);
+function calculateModel(length,type,mode){
+ const c=CONFIG[type],L=Number(length);
+ if(!c||!['edge','tani','yama'].includes(mode))return {error:'タイプ・割付基準を確認してください。'};
+ if(String(length).trim()===''||!Number.isFinite(L)||L<=60)return {error:'外端間の全長を60mmより大きい数値で入力してください。'};
+ if(L>1000000)return {error:'全長は1,000,000mm以下で入力してください。'};
+ const core=L-60,p=c.pitch;
+ const firstCore=mode==='edge'?0:mod(core/2-(mode==='tani'?p/2:0),p);
+ const start=Math.abs(firstCore)<1e-7||Math.abs(firstCore-p)<1e-7?0:firstCore;
+ const count=start<=core+1e-7?tolerantFloor((core-start)/p)+1:0;
+ const peaks=Array.from({length:Math.max(0,count)},(_,i)=>30+start+i*p);
+ if(!peaks.length)return {error:'この全長と中央割付では、計算範囲内に山が入りません。端から山始まりを選ぶか、端部の納まりを確認してください。'};
+ // 屋根の谷区画は山と山の間。両端で切断する区画も1谷として数える。
+ const roofStart=start===0?0:start-p;
+ const valleys=tolerantCeil((core-roofStart)/p);
+ const roofCount=tolerantCeil(valleys/c.valleys);
+ const frames=tolerantCeil(peaks.length/c.mountains);
+ const unused=frames*c.mountains-peaks.length;
+ return {L,core,c,start,peaks,valleys,roofCount,frames,unused,roofUnused:roofCount*c.valleys-valleys,rows:groupPeaks(peaks,c)};
+}
+function groupPeaks(peaks,c){const rows=[];for(let i=0;i<peaks.length;i+=c.mountains){const used=peaks.slice(i,i+c.mountains);rows.push({start:used[0]-c.pitch/2,peaks:used});}return rows;}
+function kerabaModel(r,kind){
+ if(r.error)return r;
+ const count=kind==='both'?2:1;
+ if(r.peaks.length<count)return {error:'ケラバを配置する山数が足りません。'};
+ const normal=r.peaks.slice(1,kind==='both'?-1:undefined);
+ return {...r,count,normal,frames:tolerantCeil(normal.length/r.c.mountains),rows:groupPeaks(normal,r.c),left:r.peaks[0],right:kind==='both'?r.peaks[r.peaks.length-1]:null};
+}
+
 
     function switchTab(tabName) {
         currentActiveTab = tabName;
@@ -408,6 +464,9 @@
         document.getElementById('view-table').classList.toggle('hidden', tabName !== 'table');
         document.getElementById('tab-calc').classList.toggle('active', tabName === 'calc');
         document.getElementById('tab-table').classList.toggle('active', tabName === 'table');
+        document.getElementById('view-edge').classList.toggle('hidden', tabName !== 'edge');
+        document.getElementById('tab-edge').classList.toggle('active', tabName === 'edge');
+        if (tabName === 'edge') generateEdge();
         if (tabName === 'table') generateTable();
         window.scrollTo(0, 0);
     }
@@ -433,10 +492,8 @@
         if (key === 'backspace') {
             inputs[focusedInputId] = inputs[focusedInputId].toString().slice(0, -1);
             isOverwriteMode = false;
-        } else if (key === 'clearAll') {
+        } else if (key === 'clear' || key === 'clearAll') {
             inputs.totalLength = '';
-            inputs.size = '600';
-            document.querySelectorAll('.type-select').forEach(sel => sel.value = '600');
             isOverwriteMode = true;
         } else if (key === 'enter') {
             handleEnter();
@@ -474,109 +531,154 @@
         return number - divisor * Math.floor(number / divisor);
     }
 
+    function getLayouts() {
+        return {
+            tani: calculateModel(inputs.totalLength, inputs.size, 'tani'),
+            yama: calculateModel(inputs.totalLength, inputs.size, 'yama')
+        };
+    }
+
     function calculate() {
-        const L = parseFloat(inputs.totalLength);
-        const size = parseFloat(inputs.size);
-        const resTaniZan = document.getElementById('resTaniZan');
-        const resYamaZan = document.getElementById('resYamaZan');
-        const countTani = document.getElementById('countTani');
-        const countYama = document.getElementById('countYama');
-        const displayCenterL = document.getElementById('display-centerL');
-
-        if (isNaN(L) || isNaN(size) || size <= 0) {
-            resTaniZan.innerText = "-"; resYamaZan.innerText = "-";
-            countTani.innerText = "-"; countYama.innerText = "-";
-            displayCenterL.innerText = "0"; return;
+        const base = getLayouts();
+        const tani = tableKeraba ? kerabaModel(base.tani, kerabaSide) : base.tani;
+        const yama = tableKeraba ? kerabaModel(base.yama, kerabaSide) : base.yama;
+        document.getElementById('key-keraba-state').innerText = tableKeraba ? 'ケラバON' : 'ケラバOFF';
+        document.getElementById('key-keraba').setAttribute('aria-pressed', String(tableKeraba));
+        document.getElementById('key-keraba').style.color = tableKeraba ? '#ff9f0a' : '';
+        const L = Number(inputs.totalLength);
+        document.getElementById('display-centerL').innerText = Number.isFinite(L) && L > 60 ? fmt(L / 2) : '0';
+        for (const [r, valueId, countId, roofId] of [[tani,'resTaniZan','countTani','resYaneTani'],[yama,'resYamaZan','countYama','resYaneYama']]) {
+            document.getElementById(valueId).innerText = !r.error && r.rows.length ? fmt(r.rows[0].start) : '-';
+            document.getElementById(countId).innerText = !r.error ? fmt(r.frames) : '-';
+            const roof = roofId === 'resYaneTani' ? base.tani : base.yama;
+            document.getElementById(roofId).innerText = !roof.error && roof.peaks.length ? fmt(roof.peaks[0]) : '-';
         }
-
-        let yama_pitch = (size === 600) ? 200 : (size === 500) ? 250 : 500;
-        let tani_offset = (size === 600) ? 100 : (size === 500) ? 125 : 250;
-
-        displayCenterL.innerText = Math.round(L / 2).toLocaleString();
-        const taniZan = excelMod(L / 2, yama_pitch);
-        const yamaZan = excelMod((L / 2) - tani_offset, yama_pitch);
-
-        resTaniZan.innerText = Math.floor(taniZan).toLocaleString();
-        resYamaZan.innerText = Math.floor(yamaZan).toLocaleString();
-        document.getElementById('resYaneTani').innerText = Math.floor(yamaZan).toLocaleString();
-        document.getElementById('resYaneYama').innerText = Math.floor(taniZan).toLocaleString();
-
-        const totalCount = Math.ceil(L / size);
-        countTani.innerText = totalCount.toLocaleString();
-        countYama.innerText = totalCount.toLocaleString();
+        if (currentActiveTab === 'table') generateTable();
+        if (currentActiveTab === 'edge') generateEdge();
     }
 
     function generateTable() {
-        const L = parseFloat(inputs.totalLength);
-        const size = parseFloat(inputs.size);
+        const base = getLayouts();
+        const tani = tableKeraba ? kerabaModel(base.tani, kerabaSide) : base.tani;
+        const yama = tableKeraba ? kerabaModel(base.yama, kerabaSide) : base.yama;
+        document.getElementById('table-mode').innerText = tableKeraba ? 'ケラバあり' : '割付表';
+        document.getElementById('table-mode').setAttribute('aria-pressed', String(tableKeraba));
+        document.getElementById('table-mode').title = 'タップでケラバタイトあり・なしを切替';
+        document.getElementById('table-side-wrap').classList.toggle('hidden', !tableKeraba);
+        document.getElementById('table-note').classList.toggle('hidden', !tableKeraba);
+        const L = Number(inputs.totalLength);
         const tbody = document.getElementById('resultTableBody');
-        tbody.innerHTML = '';
-
-        const footRemCommon = document.getElementById('foot-rem-common');
-        const footTotalCount = document.getElementById('foot-totalCount');
-        const footSize = document.getElementById('foot-size');
-        const badgeSheets = document.getElementById('table-badge-Sheets');
-
-        document.getElementById('table-badge-L').innerText = isNaN(L) ? '-' : L.toLocaleString();
-        footSize.innerText = isNaN(size) ? '-' : size.toLocaleString();
-
-        if (isNaN(L) || isNaN(size) || size <= 0) {
-            footRemCommon.innerText = "-"; footTotalCount.innerText = "-"; 
-            badgeSheets.innerText = "-"; return;
+        tbody.replaceChildren();
+        document.getElementById('table-badge-L').innerText = inputs.totalLength !== '' && Number.isFinite(L) ? fmt(L) : '-';
+        document.getElementById('table-badge-size').innerText = inputs.size;
+        // 左列は谷芯割、右列は山芯割。数値が違う場合は同じ順序で併記する。
+        const pair = (a, b) => a === b ? String(a) : `${a} / ${b}`;
+        const value = (r, key) => r.error ? '-' : fmt(r[key]);
+        document.getElementById('table-badge-Sheets').innerText = pair(value(tani,'roofCount'),value(yama,'roofCount'));
+        document.getElementById('foot-count-tani').innerText = value(tani,'frames');
+        document.getElementById('foot-count-yama').innerText = value(yama,'frames');
+        const rem = frameRemainder;
+        document.getElementById('foot-rem-tani').innerText = rem(tani);
+        document.getElementById('foot-rem-yama').innerText = rem(yama);
+        document.getElementById('table-badge-Sheets').title = '谷芯割 / 山芯割。同じ値の場合は1つ表示。';
+        for (const id of ['foot-rem-tani','foot-rem-yama']) document.getElementById(id).title = '最後のタイトで使用する山数分の幅。';
+        for (const [name, r] of [['tani', tani], ['yama', yama]]) {
+            const el = document.getElementById('foot-keraba-' + name);
+            el.classList.toggle('hidden', !tableKeraba);
+            el.innerText = r.error ? '-' : `ケラバ ${r.count || 0}本（別）`;
         }
+        fillLayoutTable('resultTableBody', tani, yama, tableKeraba, tableKeraba);
+    }
 
-        let unitForSheets = (size === 1000) ? 500 : size;
-        let sheetCount = Math.ceil(L / unitForSheets);
-        badgeSheets.innerText = sheetCount.toLocaleString();
-
-        let yama_pitch = (size === 600) ? 200 : (size === 500) ? 250 : 500;
-        let tani_offset = (size === 600) ? 100 : (size === 500) ? 125 : 250;
-
-        const taniStart = excelMod(L / 2, yama_pitch);
-        const yamaStart = excelMod((L / 2) - tani_offset, yama_pitch);
-
-        const rowCount = Math.ceil(L / size);
-        for (let i = 0; i < rowCount; i++) {
-            const curTani = taniStart + (size * i);
-            const curYama = yamaStart + (size * i);
-            const displayTani = (curTani < L) ? Math.floor(curTani).toLocaleString() : '-';
-            const displayYama = (curYama < L) ? Math.floor(curYama).toLocaleString() : '-';
-
+    function frameRemainder(r) {
+        return r.error ? '-' : !r.rows.length ? '0' : fmt(r.rows[r.rows.length - 1].peaks.length * r.c.pitch);
+    }
+    function fillLayoutTable(id, a, b, kerabaA, kerabaB) {
+        const body = document.getElementById(id); body.replaceChildren();
+        if (a.error && b.error) return;
+        const cell = (r, side) => r.error || r[side] == null ? '-' : `<span class="text-[12px]">ケラバ 山芯</span><br>${fmt(r[side])}`;
+        const add = (no, left, right) => {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td class="table-cell border-r border-[#333] text-zinc-500 font-normal text-[14px] w-12">${i}</td>
-                <td class="table-cell border-r border-[#333] text-[#0a84ff]">${displayTani}</td>
-                <td class="table-cell text-[#30d158]">${displayYama}</td>
-            `;
-            tbody.appendChild(tr);
-        }
-
-        const commonRemainderSum = L - (size * (rowCount - 1));
-        footRemCommon.innerText = Math.floor(commonRemainderSum).toLocaleString();
-        footTotalCount.innerText = rowCount.toLocaleString();
+            tr.innerHTML = `<td class="table-cell border-r border-[#333] text-zinc-500 font-normal text-[14px] w-12">${no}</td><td class="table-cell border-r border-[#333] text-[#0a84ff]">${left}</td><td class="table-cell text-[#30d158]">${right}</td>`;
+            body.appendChild(tr);
+        };
+        if (kerabaA || kerabaB) add('左', kerabaA ? cell(a, 'left') : '-', kerabaB ? cell(b, 'left') : '-');
+        const count = Math.max(a.rows?.length || 0, b.rows?.length || 0);
+        for (let i = 0; i < count; i++) add(i + 1, a.rows?.[i] ? fmt(a.rows[i].start) : '-', b.rows?.[i] ? fmt(b.rows[i].start) : '-');
+        if ((kerabaA || kerabaB) && kerabaSide === 'both') add('右', kerabaA ? cell(a, 'right') : '-', kerabaB ? cell(b, 'right') : '-');
+    }
+    function toggleTableKeraba() {
+        tableKeraba = !tableKeraba;
+        try { localStorage.setItem('tight_frame_table_keraba_v1', String(tableKeraba)); } catch (_) {}
+        calculate();
+    }
+    function setKerabaSide(value) {
+        kerabaSide = value === 'both' ? 'both' : 'left';
+        try { localStorage.setItem('tight_frame_keraba_side_v2', kerabaSide); } catch (_) {}
+        for (const id of ['table-side', 'edge-side']) document.getElementById(id).value = kerabaSide;
+        calculate();
+    }
+    function generateEdge() {
+        const r = calculateModel(inputs.totalLength, inputs.size, 'edge');
+        const k = kerabaModel(r, kerabaSide);
+        document.getElementById('edge-L').innerText = r.error ? '-' : fmt(r.L);
+        document.getElementById('edge-size').innerText = inputs.size;
+        document.getElementById('edge-sheets').innerText = r.error ? '-' : fmt(r.roofCount);
+        const summary = (v, withKeraba) => {
+            const n = v.error ? '-' : fmt(v.frames);
+            const extra = withKeraba ? `<div class="text-[12px] text-zinc-400">ケラバ ${v.error ? '-' : v.count}本（別）</div>` : '';
+            return `<div><span class="text-[11px] text-zinc-400">本数合計</span> <span class="text-[18px]">${n}</span><span class="text-[12px]">本</span></div>${extra}<div class="mt-1"><span class="text-[11px] text-zinc-400">端数合計</span> <span class="text-[18px] text-orange-400">${frameRemainder(v)}</span><span class="text-[12px]">㎜</span></div>`;
+        };
+        document.getElementById('edge-total-none').innerHTML = summary(r, false);
+        document.getElementById('edge-total-with').innerHTML = summary(k, true);
+        document.getElementById('edge-note').innerText = (r.error || k.error) || '左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。屋根材の最初の山芯は30mm。本数・端数合計は通常タイトのみ。';
+        fillLayoutTable('edge-table', r, k, false, true);
     }
 
-    function saveToStorage() { localStorage.setItem(storageKey, JSON.stringify(inputs)); }
+    function saveToStorage() { try { localStorage.setItem(storageKey, JSON.stringify(inputs)); } catch (_) {} }
     function loadFromStorage() {
-        const saved = localStorage.getItem(storageKey);
-        if (saved) {
-            const data = JSON.parse(saved);
-            Object.assign(inputs, data);
-            document.querySelectorAll('.type-select').forEach(sel => sel.value = inputs.size);
-            updateDisplay(); calculate();
-        }
+        try {
+            const data = JSON.parse(localStorage.getItem(storageKey));
+            if (data && typeof data === 'object') {
+                if (typeof data.totalLength === 'string' && /^\d*$/.test(data.totalLength)) inputs.totalLength = data.totalLength;
+                if (Object.prototype.hasOwnProperty.call(CONFIG, data.size)) inputs.size = String(data.size);
+            }
+        } catch (_) {}
+        try {
+            kerabaSide = localStorage.getItem('tight_frame_keraba_side_v2') === 'left' ? 'left' : 'both';
+            tableKeraba = localStorage.getItem('tight_frame_table_keraba_v1') === 'true';
+        } catch (_) {}
+        document.querySelectorAll('.type-select').forEach(sel => sel.value = inputs.size);
+        for (const id of ['table-side', 'edge-side']) document.getElementById(id).value = kerabaSide;
+        updateDisplay(); calculate();
     }
 
-    function copyValue(id) {
+    async function copyValue(id) {
         const val = document.getElementById(id).innerText;
         if (val === "-") return;
+        const text = val.replace(/,/g, '');
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showToast("コピーしました");
+                return;
+            } catch (_) {}
+        }
         const temp = document.createElement('textarea');
-        temp.value = val.replace(/,/g, '');
+        temp.value = text;
+        temp.readOnly = true;
+        temp.style.cssText = 'position:fixed;left:-9999px;top:0;font-size:16px';
         document.body.appendChild(temp);
-        temp.select();
-        document.execCommand('copy');
-        document.body.removeChild(temp);
-        showToast("コピーしました");
+        let copied = false;
+        try {
+            temp.select();
+            copied = document.execCommand('copy');
+        } catch (_) {
+            copied = false;
+        } finally {
+            document.body.removeChild(temp);
+        }
+        showToast(copied ? "コピーしました" : "コピーできませんでした");
     }
 
     function showToast(msg) {
@@ -586,11 +688,22 @@
     }
 
     let touchStartX = 0;
-    document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].clientX; }, { passive: true });
+    let touchStartY = 0;
+    let swipeReady = false;
+    document.addEventListener('touchstart', e => {
+        swipeReady = e.touches.length === 1 && !e.target.closest('button, select, input, textarea, .result-box, .calc-cell');
+        if (!swipeReady) return;
+        touchStartX = e.changedTouches[0].clientX;
+        touchStartY = e.changedTouches[0].clientY;
+    }, { passive: true });
+    document.addEventListener('touchcancel', () => { swipeReady = false; }, { passive: true });
     document.addEventListener('touchend', e => {
-        if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+        if (!swipeReady || e.touches.length || !e.changedTouches.length) return;
+        swipeReady = false;
+        if (['INPUT', 'SELECT'].includes(document.activeElement?.tagName)) return;
         const deltaX = touchStartX - e.changedTouches[0].clientX;
-        if (Math.abs(deltaX) > 80) {
+        const deltaY = touchStartY - e.changedTouches[0].clientY;
+        if (Math.abs(deltaX) > 80 && Math.abs(deltaX) > Math.abs(deltaY)) {
             if (deltaX > 0 && currentActiveTab === 'calc') switchTab('table');
             else if (deltaX < 0 && currentActiveTab === 'table') switchTab('calc');
         }
@@ -616,7 +729,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js');
+      navigator.serviceWorker.register('./sw.js').catch(() => {});
     }, { once: true });
   }
 
@@ -635,10 +748,15 @@
   if (installBtn) {
     installBtn.addEventListener('click', async () => {
       if (deferredPrompt) {
-        deferredPrompt.prompt();
         try {
+          await deferredPrompt.prompt();
           await deferredPrompt.userChoice;
-        } catch (error) {}
+        } catch (error) {
+          showToast("インストール画面を開けませんでした");
+        } finally {
+          deferredPrompt = null;
+          installBtn.style.display = 'none';
+        }
         return;
       }
 
