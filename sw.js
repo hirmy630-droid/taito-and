@@ -2,7 +2,7 @@
 const BASE = new URL('./', self.registration.scope);
 const INDEX_URL = new URL('index.html', BASE).href;
 const CACHE_PREFIX = 'kyowa-tight-frame:' + encodeURIComponent(BASE.href) + ':';
-const CACHE_NAME = CACHE_PREFIX + '20261011-165323';
+const CACHE_NAME = CACHE_PREFIX + '20261011-185350';
 
 self.addEventListener('install', event => {
   event.waitUntil((async () => {

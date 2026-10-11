@@ -256,6 +256,9 @@
 }
 #installBtn:active{transform:scale(.98)}
 
+            #resTaniZan, #resYamaZan { font-size: 24px; }
+        .keraba-divider-top > td { border-top: 2px solid #b8b8bd; }
+        .keraba-divider-bottom > td { border-bottom: 2px solid #b8b8bd; }
     </style>
 
 <link rel="manifest" href="manifest.json">
@@ -298,10 +301,10 @@
                         <div class="count-badge count-badge-blue"><span id="countTani">-</span>本</div>
                     </div>
                     <div class="result-value">
-                        <span id="resTaniZan">-</span><span class="unit-text">㎜</span>
+                        <span id="resTaniZan">-</span>
                         <span class="separator-slash">/</span>
                         <div class="yane-area">
-                            <span>屋根割付 </span><span id="resYaneTani" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                            <span>屋根割付 </span><span id="resYaneTani" class="font-bold ml-1">-</span>
                         </div>
                     </div>
                 </div>
@@ -311,10 +314,10 @@
                         <div class="count-badge count-badge-green"><span id="countYama">-</span>本</div>
                     </div>
                     <div class="result-value">
-                        <span id="resYamaZan">-</span><span class="unit-text">㎜</span>
+                        <span id="resYamaZan">-</span>
                         <span class="separator-slash">/</span>
                         <div class="yane-area">
-                            <span>屋根割付 </span><span id="resYaneYama" class="font-bold ml-1">-</span><span class="unit-text text-[12px] opacity-40 ml-0.5">㎜</span>
+                            <span>屋根割付 </span><span id="resYaneYama" class="font-bold ml-1">-</span>
                         </div>
                     </div>
                 </div>
@@ -410,7 +413,7 @@
                         </tfoot>
                     </table>
                 </div>
-                <p id="table-note" class="hidden text-[14px] text-zinc-400 mt-2">左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。本数・端数合計は通常タイトのみ。</p>
+                <p id="table-note" class="hidden text-[14px] text-zinc-400 mt-2">左切断端からの寸法(mm)。ケラバ山芯・通常タイトは全長内。切断した通常タイトは切断端の位置。本数・端数合計は通常タイトのみ。</p>
             </div>
         </div>
     </div>
@@ -434,27 +437,33 @@ function calculateModel(length,type,mode){
  if(!c||!['edge','tani','yama'].includes(mode))return {error:'タイプ・割付基準を確認してください。'};
  if(String(length).trim()===''||!Number.isFinite(L)||L<=60)return {error:'外端間の全長を60mmより大きい数値で入力してください。'};
  if(L>1000000)return {error:'全長は1,000,000mm以下で入力してください。'};
- const core=L-60,p=c.pitch;
+ const core=mode==='edge'?L-60:L,p=c.pitch;
+ const origin=mode==='edge'?30:0;
  const firstCore=mode==='edge'?0:mod(core/2-(mode==='tani'?p/2:0),p);
  const start=Math.abs(firstCore)<1e-7||Math.abs(firstCore-p)<1e-7?0:firstCore;
  const count=start<=core+1e-7?tolerantFloor((core-start)/p)+1:0;
- const peaks=Array.from({length:Math.max(0,count)},(_,i)=>30+start+i*p);
+ const peaks=Array.from({length:Math.max(0,count)},(_,i)=>origin+start+i*p);
  if(!peaks.length)return {error:'この全長と中央割付では、計算範囲内に山が入りません。端から山始まりを選ぶか、端部の納まりを確認してください。'};
- // 屋根の谷区画は山と山の間。両端で切断する区画も1谷として数える。
- const roofStart=start===0?0:start-p;
- const valleys=tolerantCeil((core-roofStart)/p);
+ // 屋根材とタイトで同じ山・谷の位置を使用。切断線の内側にある谷芯を数える。
+ const valleyPhase=mod(origin+start+p/2,p);
+ const firstValley=Math.abs(valleyPhase)<1e-7? p:valleyPhase;
+ const valleys=firstValley<L-1e-7?tolerantCeil((L-firstValley)/p):0;
  const roofCount=tolerantCeil(valleys/c.valleys);
  const frames=tolerantCeil(peaks.length/c.mountains);
  const unused=frames*c.mountains-peaks.length;
  return {L,core,c,start,peaks,valleys,roofCount,frames,unused,roofUnused:roofCount*c.valleys-valleys,rows:groupPeaks(peaks,c)};
 }
-function groupPeaks(peaks,c){const rows=[];for(let i=0;i<peaks.length;i+=c.mountains){const used=peaks.slice(i,i+c.mountains);rows.push({start:used[0]-c.pitch/2,peaks:used});}return rows;}
+function groupPeaks(peaks,c){const rows=[];for(let i=0;i<peaks.length;i+=c.mountains){const used=peaks.slice(i,i+c.mountains);rows.push({start:used[0]-c.pitch/2,end:used[used.length-1]+c.pitch/2,peaks:used});}return rows;}
 function kerabaModel(r,kind){
  if(r.error)return r;
+ const inside=r.peaks.filter(x=>x>1e-7&&x<r.L-1e-7);
  const count=kind==='both'?2:1;
- if(r.peaks.length<count)return {error:'ケラバを配置する山数が足りません。'};
- const normal=r.peaks.slice(1,kind==='both'?-1:undefined);
- return {...r,count,normal,frames:tolerantCeil(normal.length/r.c.mountains),rows:groupPeaks(normal,r.c),left:r.peaks[0],right:kind==='both'?r.peaks[r.peaks.length-1]:null};
+ if(inside.length<count)return {error:'全長の内側にケラバを配置する山数が足りません。'};
+ const left=inside[0],right=kind==='both'?inside[inside.length-1]:null;
+ // ケラバより外側・切断線上の山を通常タイトへ戻さない。
+ const normal=r.peaks.filter(x=>x>left+1e-7&&(right==null||x<right-1e-7));
+ const rows=groupPeaks(normal,r.c).map(row=>({...row,start:Math.max(0,row.start),end:Math.min(r.L,row.end)}));
+ return {...r,count,normal,frames:tolerantCeil(normal.length/r.c.mountains),unused:tolerantCeil(normal.length/r.c.mountains)*r.c.mountains-normal.length,rows,left,right};
 }
 
 
@@ -602,10 +611,16 @@ function kerabaModel(r,kind){
             tr.innerHTML = `<td class="table-cell border-r border-[#333] text-zinc-500 font-normal text-[14px] w-12">${no}</td><td class="table-cell border-r border-[#333] text-[#0a84ff]">${left}</td><td class="table-cell text-[#30d158]">${right}</td>`;
             body.appendChild(tr);
         };
-        if (kerabaA || kerabaB) add('左', kerabaA ? cell(a, 'left') : '-', kerabaB ? cell(b, 'left') : '-');
+        if (kerabaA || kerabaB) {
+            add('左', kerabaA ? cell(a, 'left') : '-', kerabaB ? cell(b, 'left') : '-');
+            body.lastElementChild.classList.add('keraba-divider-bottom');
+        }
         const count = Math.max(a.rows?.length || 0, b.rows?.length || 0);
         for (let i = 0; i < count; i++) add(i + 1, a.rows?.[i] ? fmt(a.rows[i].start) : '-', b.rows?.[i] ? fmt(b.rows[i].start) : '-');
-        if ((kerabaA || kerabaB) && kerabaSide === 'both') add('右', kerabaA ? cell(a, 'right') : '-', kerabaB ? cell(b, 'right') : '-');
+        if ((kerabaA || kerabaB) && kerabaSide === 'both') {
+            add('右', kerabaA ? cell(a, 'right') : '-', kerabaB ? cell(b, 'right') : '-');
+            body.lastElementChild.classList.add('keraba-divider-top');
+        }
     }
     function toggleTableKeraba() {
         tableKeraba = !tableKeraba;
