@@ -372,12 +372,11 @@
                 <div class="bg-[#2c2c2e] p-3 border-b border-[#444]">
                     <div class="flex justify-between items-center"><div class="font-bold text-base">全長: <span id="edge-L">-</span>㎜</div><button id="share-edge" type="button" class="layout-share-button" onclick="shareLayout('edge')" aria-label="共有" title="共有"><svg viewBox="0 0 24 24" width="23" height="23" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3m-4 4 4-4 4 4M7 10H5v11h14V10h-2"/></svg></button></div>
                     <div class="font-bold text-[14px] mt-2 flex items-center justify-between gap-2 whitespace-nowrap"><span><span id="edge-size">-</span>タイプ</span><span class="ml-auto text-right">屋根材 <span id="edge-sheets" class="text-orange-400">-</span>枚</span></div>
-                    <div id="edge-shoulders" style="font-size:14px" class="text-[14px] font-bold mt-1 whitespace-nowrap overflow-x-auto" title="① 全長の端から山の内側の肩まで（mm）">谷芯 左-・右-、山芯 左-・右-</div>
-                    <div class="mt-2"><select id="edge-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
+                    <div class="mt-2" style="display:flex;align-items:center;gap:8px"><select id="edge-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px;flex-shrink:0"><option value="left">ケラバ：片端1本</option><option value="both" selected>ケラバ：終始2本</option></select><div id="edge-shoulders" style="font-size:14px;margin-left:auto;text-align:right;white-space:nowrap" class="font-bold" title="全長の端から山の内側の肩まで（mm）">左-・右-</div></div>
                 </div>
                 <table class="w-full"><thead><tr class="bg-[#2c2c2e] text-[14px] font-semibold border-b border-[#444]"><th class="py-2 border-r border-[#444] w-12 text-zinc-500">本</th><th class="py-2 border-r border-[#444] text-[#0a84ff]">ケラバなし</th><th class="py-2 text-[#30d158]">ケラバあり</th></tr></thead><tbody id="edge-table"></tbody>
                 <tfoot class="table-foot-row"><tr><td class="border-r border-[#444]"></td><td id="edge-total-none" class="py-3 px-1 text-center border-r border-[#444]"></td><td id="edge-total-with" class="py-3 px-1 text-center"></td></tr></tfoot></table>
-            </div><p id="edge-note" class="text-[14px] text-zinc-400 mt-2">左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。屋根材の最初の山芯は30mm。</p></div>
+            </div><p id="edge-note" class="text-[14px] text-zinc-400 mt-2">左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。終のケラバは右外端からの寸法。屋根材の最初の山芯は30mm。</p></div>
         </div>
 
         <!-- 割付表画面 -->
@@ -393,7 +392,7 @@
                         <div class="font-bold text-[14px] mt-2 flex items-center justify-between gap-2 whitespace-nowrap"><span><span id="table-badge-size">-</span>タイプ</span><span id="roof-count-inline" class="ml-auto text-right">屋根材 -枚</span><span class="hidden"><span id="table-badge-Sheets">-</span></span></div>
 
                     <div id="table-shoulders" style="font-size:14px" class="text-[14px] font-bold mt-1 whitespace-nowrap overflow-x-auto" title="① 全長の端から山の内側の肩まで（mm）">谷芯 左-・右-、山芯 左-・右-</div>
-                        <div id="table-side-wrap" class="mt-2 hidden"><select id="table-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：左端1本</option><option value="both" selected>ケラバ：左右各1本</option></select></div>
+                        <div id="table-side-wrap" class="mt-2 hidden"><select id="table-side" onchange="setKerabaSide(this.value)" style="background:#2c2c2e;color:white;border:1px solid #444;border-radius:6px;padding:6px;font-size:14px"><option value="left">ケラバ：片端1本</option><option value="both" selected>ケラバ：終始2本</option></select></div>
                     </div>
                     <table class="w-full">
                         <thead class="shadow-md">
@@ -419,7 +418,7 @@
                         </tfoot>
                     </table>
                 </div>
-                <p id="table-note" class="hidden text-[14px] text-zinc-400 mt-2">左切断端からの寸法(mm)。ケラバ山芯・通常タイトは全長内。切断した通常タイトは切断端の位置。本数・端数合計は通常タイトのみ。</p>
+                <p id="table-note" class="hidden text-[14px] text-zinc-400 mt-2">左切断端からの寸法(mm)。終のケラバ山芯は右切断端からの寸法。ケラバ山芯・通常タイトは全長内。切断した通常タイトは切断端の位置。本数・端数合計は通常タイトのみ。</p>
             </div>
         </div>
     </div>
@@ -548,14 +547,15 @@ function kerabaModel(r,kind){
 
     // ①：全長の切断端から、端の山の内側の肩まで。
     // 1000タイプは山半幅に水平の肩41mmを加える。
-    function roofShoulders(r, type) {
+    function roofShoulders(r, type, roundUp = false) {
         if (r.error) return {left:'-',right:'-'};
         const offsets = {'600':[33.5/2,35/2], '500':[38/2,36/2], '1000':[21/2+41,16/2+41]};
         const [leftOffset,rightOffset] = offsets[type];
         const left = r.peaks[0] + leftOffset;
         const right = r.L - r.peaks[r.peaks.length-1] + rightOffset;
         // 極端に短く、肩の位置が全長外になる納まりは数値表示しない。
-        return {left:left<=r.L?fmt(left):'-', right:right<=r.L?fmt(right):'-'};
+        const display = value => fmt(roundUp ? Math.ceil(value) : value);
+        return {left:left<=r.L?display(left):'-', right:right<=r.L?display(right):'-'};
     }
 
     function getLayouts() {
@@ -598,7 +598,7 @@ function kerabaModel(r,kind){
         tbody.replaceChildren();
         document.getElementById('table-badge-L').innerText = inputs.totalLength !== '' && Number.isFinite(L) ? fmt(L) : '-';
         document.getElementById('table-badge-size').innerText = inputs.size;
-        const st=roofShoulders(base.tani,inputs.size),sy=roofShoulders(base.yama,inputs.size);
+        const st=roofShoulders(base.tani,inputs.size,true),sy=roofShoulders(base.yama,inputs.size,true);
         document.getElementById('table-shoulders').innerText = `谷芯 左${st.left}・右${st.right}、山芯 左${sy.left}・右${sy.right}`;
         // 左列は谷芯割、右列は山芯割。数値が違う場合は同じ順序で併記する。
         const pair = (a, b) => a === b ? String(a) : `${a} / ${b}`;
@@ -629,20 +629,20 @@ function kerabaModel(r,kind){
     function fillLayoutTable(id, a, b, kerabaA, kerabaB) {
         const body = document.getElementById(id); body.replaceChildren();
         if (a.error && b.error) return;
-        const cell = (r, side) => r.error || r[side] == null ? '-' : `<span class="text-[12px]">ケラバ 山芯</span><br>${fmt(r[side])}`;
+        const cell = (r, side) => r.error || r[side] == null ? '-' : `<span class="text-[12px]">ケラバ 山芯</span><br>${fmt(side === 'right' ? r.L - r[side] : r[side])}`;
         const add = (no, left, right) => {
             const tr = document.createElement('tr');
             tr.innerHTML = `<td class="table-cell border-r border-[#333] text-zinc-500 font-normal text-[14px] w-12">${no}</td><td class="table-cell border-r border-[#333] text-[#0a84ff]">${left}</td><td class="table-cell text-[#30d158]">${right}</td>`;
             body.appendChild(tr);
         };
         if (kerabaA || kerabaB) {
-            add('左', kerabaA ? cell(a, 'left') : '-', kerabaB ? cell(b, 'left') : '-');
+            add('始', kerabaA ? cell(a, 'left') : '-', kerabaB ? cell(b, 'left') : '-');
             body.lastElementChild.classList.add('keraba-divider-bottom');
         }
         const count = Math.max(a.rows?.length || 0, b.rows?.length || 0);
         for (let i = 0; i < count; i++) add(i + 1, a.rows?.[i] ? fmt(a.rows[i].start) : '-', b.rows?.[i] ? fmt(b.rows[i].start) : '-');
         if ((kerabaA || kerabaB) && kerabaSide === 'both') {
-            add('右', kerabaA ? cell(a, 'right') : '-', kerabaB ? cell(b, 'right') : '-');
+            add('終', kerabaA ? cell(a, 'right') : '-', kerabaB ? cell(b, 'right') : '-');
             body.lastElementChild.classList.add('keraba-divider-top');
         }
     }
@@ -662,8 +662,8 @@ function kerabaModel(r,kind){
         const k = kerabaModel(r, kerabaSide);
         document.getElementById('edge-L').innerText = r.error ? '-' : fmt(r.L);
         document.getElementById('edge-size').innerText = inputs.size;
-        const shoulder=roofShoulders(r,inputs.size);
-        document.getElementById('edge-shoulders').innerText = `① 左${shoulder.left}・右${shoulder.right}`;
+        const shoulder=roofShoulders(r,inputs.size,true);
+        document.getElementById('edge-shoulders').innerText = `左${shoulder.left}・右${shoulder.right}`;
         document.getElementById('edge-sheets').innerText = r.error ? '-' : fmt(r.roofCount);
         const summary = (v, withKeraba) => {
             const n = v.error ? '-' : fmt(v.frames);
@@ -672,7 +672,7 @@ function kerabaModel(r,kind){
         };
         document.getElementById('edge-total-none').innerHTML = summary(r, false);
         document.getElementById('edge-total-with').innerHTML = summary(k, true);
-        document.getElementById('edge-note').innerText = (r.error || k.error) || '左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。屋根材の最初の山芯は30mm。本数・端数合計は通常タイトのみ。';
+        document.getElementById('edge-note').innerText = (r.error || k.error) || '左外端からの寸法(mm)。通常タイトは谷芯、ケラバは山芯。終のケラバは右外端からの寸法。屋根材の最初の山芯は30mm。本数・端数合計は通常タイトのみ。';
         fillLayoutTable('edge-table', r, k, false, true);
     }
 
@@ -686,11 +686,11 @@ function kerabaModel(r,kind){
             `全長：${length}mm`,
             `タイプ：${read(edge ? 'edge-size' : 'table-badge-size')}`,
             `屋根材：${read(edge ? 'edge-sheets' : 'table-badge-Sheets')}枚`];
-        lines.push('① ' + read(edge ? 'edge-shoulders' : 'table-shoulders').replace(/^①\s*/, '') + '（mm）');
-        if (edge || tableKeraba) lines.push(`ケラバ：${kerabaSide === 'both' ? '左右各1本' : '左端1本'}`);
+        lines.push((edge ? '' : '① ') + read(edge ? 'edge-shoulders' : 'table-shoulders').replace(/^①\s*/, '') + '（mm）');
+        if (edge || tableKeraba) lines.push(`ケラバ：${kerabaSide === 'both' ? '終始2本' : '片端1本'}`);
         else lines.push('ケラバ：なし');
         if (!edge && read('table-badge-Sheets').includes('/')) lines.push('屋根材枚数の順：谷芯割／山芯割');
-        lines.push('単位：mm（左端からの寸法）', '', edge ? '本｜ケラバなし｜ケラバあり' : '本｜谷芯割｜山芯割');
+        lines.push('単位：mm（左端からの寸法。終のケラバは右端から）', '', edge ? '本｜ケラバなし｜ケラバあり' : '本｜谷芯割｜山芯割');
         const body = document.getElementById(edge ? 'edge-table' : 'resultTableBody');
         const clean = el => el.innerText.trim().replace(/\s+/g, ' ');
         for (const row of body.children) lines.push(Array.from(row.children, clean).join('｜'));
